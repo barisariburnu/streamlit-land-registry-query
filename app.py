@@ -55,28 +55,42 @@ def get_filtered_data(_engine, field: str, il: str = None, ilce: str = None,
 def search_records(_engine, il: str, ilce: str, mahalle: str, ada: str, parsel: str) -> pd.DataFrame:
     """Search records with SQLAlchemy."""
     query = """
-    SELECT 
-        z."ParselRef",
-        z."Il",
-        z."Ilce",
-        z."MahalleKoyAdi",
-        z."Ada",
-        z."Parsel",
-        zh."Adi",
-        zh."Soyadi",
-        zh."BabaAdi",
-        zh."TCKimlikNo",
-        zh."HissePay",
-        zh."HissePayda",
-        CAST(CAST(zh."HissePay" AS FLOAT) / CAST(zh."HissePayda" AS FLOAT) * 100 AS DECIMAL(10,2)) as "HisseOrani"
-    FROM zemin z
-    INNER JOIN zeminhisse zh ON z."ID" = zh."ZeminRef"
-    WHERE z."Il" = :il
-    AND z."Ilce" = :ilce
-    AND z."MahalleKoyAdi" = :mahalle
-    AND z."Ada" = :ada
-    AND z."Parsel" = :parsel
-    ORDER BY zh."Adi", zh."Soyadi"
+        SELECT 
+            z."ParselRef",
+            z."Il",
+            z."Ilce",
+            z."MahalleKoyAdi",
+            z."Ada",
+            z."Parsel",
+            zh."Adi",
+            zh."Soyadi",
+            zh."BabaAdi",
+            zh."TCKimlikNo",
+            zh."HissePay",
+            zh."HissePayda",
+            CAST(CAST(zh."HissePay" AS FLOAT) / CAST(zh."HissePayda" AS FLOAT) * 100 AS DECIMAL(10,2)) as "HisseOrani",
+            SUM(z."Yuzolcum"*(CAST(zh."HissePay" AS FLOAT) / CAST(zh."HissePayda" AS FLOAT))) AS "HisseyeDusenAlan" 
+        FROM zemin z
+        INNER JOIN zeminhisse zh ON z."ID" = zh."ZeminRef"
+        WHERE z."Il" = :il
+        AND z."Ilce" = :ilce
+        AND z."MahalleKoyAdi" = :mahalle
+        AND z."Ada" = :ada
+        AND z."Parsel" = :parsel
+        GROUP BY
+            z."ParselRef",
+            z."Il",
+            z."Ilce",
+            z."MahalleKoyAdi",
+            z."Ada",
+            z."Parsel",
+            zh."Adi",
+            zh."Soyadi",
+            zh."BabaAdi",
+            zh."TCKimlikNo",
+            zh."HissePay",
+            zh."HissePayda"
+        ORDER BY zh."Adi", zh."Soyadi"
     """
     
     try:
@@ -92,94 +106,83 @@ def search_records(_engine, il: str, ilce: str, mahalle: str, ada: str, parsel: 
         return pd.DataFrame()
 
 def create_pie_chart(df: pd.DataFrame) -> go.Figure:
-    """Create a pie chart of share distributions."""
-    try:
-        if df.empty:
-            return None
-        
-        df = df.copy()  # Create a copy
-        df['HisseOrani'] = df['HisseOrani'].astype(float)
-        
-        names = df.apply(lambda x: f"{x['Adi']} {x['Soyadi']}", axis=1)
-        values = df['HisseOrani']
-        
-        fig = px.pie(
-            values=values,
-            names=names,
-            title='Hisse Dağılımı (%)'
-        )
-        fig.update_traces(
-            textposition='inside', 
-            textinfo='percent+label',
-            texttemplate="%{percent:.2f}%"
-        )
-        return fig
-    except Exception as e:
-        logger.error(f"Pie chart error: {str(e)}")
-        return None
+   try:
+       if df.empty:
+           return None
+       
+       df = df.copy()
+       df['HisseyeDusenAlan'] = df['HisseyeDusenAlan'].astype(float)
+       names = df.apply(lambda x: f"{x['Adi']} {x['Soyadi']}", axis=1)
+       
+       fig = px.pie(
+           values=df['HisseyeDusenAlan'],
+           names=names,
+           title='Hisse Dağılımı (m²)'
+       )
+       fig.update_traces(
+           textposition='inside', 
+           textinfo='percent+value+label',
+           texttemplate="%{percent:.2f}% (%{value:.2f}m²)"
+       )
+       return fig
+   except Exception as e:
+       logger.error(f"Pie chart error: {str(e)}")
+       return None
 
 def create_bar_chart(df: pd.DataFrame) -> go.Figure:
-    """Create a bar chart of share distributions."""
-    try:
-        if df.empty:
-            return None
-        
-        df = df.copy()  # Create a copy
-        df['HisseOrani'] = df['HisseOrani'].astype(float)
-        
-        names = df.apply(lambda x: f"{x['Adi']} {x['Soyadi']}", axis=1)
-        values = df['HisseOrani']
-        
-        fig = px.bar(
-            x=names,
-            y=values,
-            title='Hisse Dağılımı (Bar Grafik)',
-            labels={'x': 'Hissedar', 'y': 'Hisse Oranı (%)'}
-        )
-        fig.update_traces(
-            texttemplate='%{y:.2f}%', 
-            textposition='outside'
-        )
-        return fig
-    except Exception as e:
-        logger.error(f"Bar chart error: {str(e)}")
-        return None
+   try:
+       if df.empty:
+           return None
+           
+       df = df.copy()
+       df['HisseyeDusenAlan'] = df['HisseyeDusenAlan'].astype(float)
+       names = df.apply(lambda x: f"{x['Adi']} {x['Soyadi']}", axis=1)
+       
+       fig = px.bar(
+           x=names,
+           y=df['HisseyeDusenAlan'],
+           title='Hisse Dağılımı (m²)',
+           labels={'x': 'Hissedar', 'y': 'Alan (m²)'}
+       )
+       fig.update_traces(texttemplate='%{y:.2f}m²', textposition='outside')
+       return fig
+   except Exception as e:
+       logger.error(f"Bar chart error: {str(e)}")
+       return None
 
 def create_waterfall_chart(df: pd.DataFrame) -> go.Figure:
-    """Create a waterfall chart showing cumulative shares."""
-    try:
-        if df.empty:
-            return None
-        
-        df = df.copy()  # Create a copy
-        df['HisseOrani'] = df['HisseOrani'].astype(float)
-        
-        df_sorted = df.sort_values('HisseOrani', ascending=True)
-        names = df_sorted.apply(lambda x: f"{x['Adi']} {x['Soyadi']}", axis=1)
-        values = df_sorted['HisseOrani']
-        
-        fig = go.Figure(go.Waterfall(
-            name="Kümülatif Hisse Dağılımı",
-            orientation="v",
-            measure=["relative"] * len(df),
-            x=names,
-            y=values,
-            connector={"line": {"color": "rgb(63, 63, 63)"}},
-            text=[f"{val:.2f}%" for val in values],
-            textposition='outside'
-        ))
-        
-        fig.update_layout(
-            title='Kümülatif Hisse Dağılımı',
-            xaxis_title="Hissedar",
-            yaxis_title="Hisse Oranı (%)",
-            showlegend=False
-        )
-        
-        return fig
-    except Exception as e:
-        logger.error(f"Waterfall chart error: {str(e)}")
-        return None
+   try:
+       if df.empty:
+           return None
+       
+       df = df.copy()
+       df['HisseyeDusenAlan'] = df['HisseyeDusenAlan'].astype(float)
+       df_sorted = df.sort_values('HisseyeDusenAlan', ascending=True)
+       names = df_sorted.apply(lambda x: f"{x['Adi']} {x['Soyadi']}", axis=1)
+       values = df_sorted['HisseyeDusenAlan']
+       
+       fig = go.Figure(go.Waterfall(
+           orientation="v",
+           measure=["relative"] * len(df),
+           x=names,
+           y=values,
+           text=[f"{val:.2f}m²" for val in values],
+           textposition='outside',
+           decreasing={"marker":{"color":"#FF4B4B"}},
+           increasing={"marker":{"color":"#2E8B57"}},
+           totals={"marker":{"color":"#1E90FF"}}
+       ))
+       
+       fig.update_layout(
+           title='Kümülatif Alan Dağılımı',
+           xaxis_title="Hissedar",
+           yaxis_title="Alan (m²)",
+           showlegend=False
+       )
+       return fig
+   except Exception as e:
+       logger.error(f"Waterfall chart error: {str(e)}")
+       return None
 
 def export_to_excel(df: pd.DataFrame) -> bytes:
     """Export DataFrame to Excel bytes."""
@@ -302,13 +305,13 @@ def main():
                     st.metric("Toplam Hissedar", len(df))
                 
                 with col2:
-                    st.metric("Ortalama Hisse (%)", f"{df['HisseOrani'].mean():.2f}")
+                    st.metric("Ortalama Hisse (m²)", f"{df['HisseyeDusenAlan'].mean():.2f}")
                 
                 with col3:
-                    st.metric("En Yüksek Hisse (%)", f"{df['HisseOrani'].max():.2f}")
+                    st.metric("En Yüksek Hisse (m²)", f"{df['HisseyeDusenAlan'].max():.2f}")
                 
                 with col4:
-                    st.metric("En Düşük Hisse (%)", f"{df['HisseOrani'].min():.2f}")
+                    st.metric("En Düşük Hisse (m²)", f"{df['HisseyeDusenAlan'].min():.2f}")
                 
                 # Add export buttons
                 st.subheader("Dışa Aktarma")
