@@ -23,59 +23,84 @@ A web application for querying, visualizing, and exporting land registry and sha
 ## Technical Stack
 
 - **Frontend**: Streamlit
-- **Backend**: Python 3.8+
+- **Backend**: Python 3.10+
 - **Database**: PostgreSQL
 - **ORM**: SQLAlchemy 2.0
 - **Visualization**: Plotly
 - **Data Processing**: Pandas
+- **Containerization**: Docker
 
 ## Installation
 
-1. Install Python 3.8 or higher
+1. Install Docker and Docker Compose:
+```bash
+# Docker repository'sini ekleyin
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+# Docker'ı yükleyin
+sudo dnf install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y
+
+# Docker'ı başlatın
+sudo systemctl start docker
+sudo systemctl enable docker
+```
 
 2. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/streamlit-land-registry-query.git
+git clone https://github.com/barisariburnu/streamlit-land-registry-query.git
 cd streamlit-land-registry-query
 ```
 
-3. Create a virtual environment:
+3. Configure firewall:
 ```bash
-python -m venv venv
-source venv/bin/activate  # For Linux/Mac
-venv\Scripts\activate     # For Windows
-```
+# Install Firewall (if not installed)
+sudo dnf install firewalld -y
 
-4. Install requirements:
-```bash
-pip install -r requirements.txt
+# Start and activate the Firewall service
+sudo systemctl start firewalld
+sudo systemctl enable firewalld
+
+# Open port 8502
+sudo firewall-cmd --permanent --add-port=8502/tcp
+sudo firewall-cmd --reload
+
+# Check that the port is open
+sudo firewall-cmd --list-ports
 ```
 
 ## Configuration
 
-1. Create `.streamlit` directory:
-```bash
-mkdir .streamlit
+1. Create `.env` file:
+```env
+POSTGRES_HOST=database_host
+POSTGRES_PORT=5432
+POSTGRES_DB=database_name
+POSTGRES_USER=username
+POSTGRES_PASSWORD=password
 ```
 
-2. Create `.streamlit/secrets.toml`:
-```toml
-[postgres]
-host = "database_host"
-port = "5432"
-database = "database_name"
-user = "username"
-password = "password"
+## Project Structure
+
+```
+streamlit-land-registry-query/
+├── .gitignore
+├── .env                  # Environment variables
+├── Dockerfile           # Docker configuration
+├── docker-compose.yml   # Docker Compose configuration
+├── app/                 # Application directory
+│   └── main.py         # Main application
+├── requirements.txt     # Python dependencies
+└── README.md           # This file
 ```
 
 ## Usage
 
-1. Start the application:
+1. Start the application with Docker:
 ```bash
-streamlit run app.py
+sudo docker-compose up -d --build
 ```
 
-2. Visit the provided URL in your browser (typically http://localhost:8501)
+2. Visit http://your-server-ip:8501 in your browser
 
 3. To perform a search:
    - Select a Province
@@ -94,34 +119,21 @@ streamlit run app.py
    - Download as CSV
    - Download as formatted Excel
 
-## Project Structure
+## Docker Commands
 
+```bash
+# View logs
+sudo docker-compose logs -f
+
+# Stop application
+sudo docker-compose down
+
+# Restart application
+sudo docker-compose restart
+
+# Rebuild and start
+sudo docker-compose up -d --build
 ```
-streamlit-land-registry-query/
-├── .gitignore
-├── .streamlit/
-│   ├── config.toml        # Streamlit settings
-│   └── secrets.toml       # Secret configuration
-├── app.py                 # Main application
-├── requirements.txt       # Python dependencies
-└── README.md             # This file
-```
-
-## Key Notes
-
-- Application is optimized for dark mode
-- All search fields are mandatory
-- Excel exports include automatic formatting
-- Full UTF-8 encoding support for special characters
-- Cached database queries for better performance
-
-## Security Features
-
-- SQL Injection protection through SQLAlchemy
-- Parameter validation
-- Secure database connections
-- Sensitive information stored in secrets.toml
-- Type checking and input validation
 
 ## Database Models
 
