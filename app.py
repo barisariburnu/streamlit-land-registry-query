@@ -1,8 +1,11 @@
+from functools import wraps
+import time
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError, DatabaseError
 from typing import List, Dict, Any
 import io
 import logging
@@ -11,20 +14,50 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def retry_on_db_error(max_retries=3, delay_seconds=1):
+    """Decorator to retry database operations on connection errors."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            retries = 0
+            while retries < max_retries:
+                try:
+                    return func(*args, **kwargs)
+                except (OperationalError, DatabaseError) as e:
+                    retries += 1
+                    if retries == max_retries:
+                        logger.error(f"Failed after {max_retries} retries: {str(e)}")
+                        raise
+                    logger.warning(f"Database error (attempt {retries}/{max_retries}): {str(e)}")
+                    time.sleep(delay_seconds * retries)  # Exponential backoff
+            return None
+        return wrapper
+    return decorator
+
 # Database connection with pooling and retry logic
 @st.cache_resource
 def get_db_engine():
-    """Create and cache database engine."""
+    """Create and cache database engine with connection pooling and retry settings."""
     return create_engine(
         f"postgresql://{st.secrets['postgres']['user']}:{st.secrets['postgres']['password']}"
         f"@{st.secrets['postgres']['host']}:{st.secrets['postgres']['port']}"
-        f"/{st.secrets['postgres']['database']}"
+        f"/{st.secrets['postgres']['database']}",
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=30,
+        pool_recycle=1800,  # Recycle connections after 30 minutes
+        pool_pre_ping=True, # Enable connection health checks
+        connect_args={
+            "connect_timeout": 10,
+            "application_name": "streamlit-land-registry"
+        }
     )
 
-@st.cache_data
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+@retry_on_db_error()
 def get_filtered_data(_engine, field: str, il: str = None, ilce: str = None, 
                      mahalle: str = None, ada: str = None) -> list:
-    """Get filtered data from database using SQLAlchemy."""
+    """Get filtered data from database with retry logic."""
     query = f'SELECT DISTINCT "{field}" FROM zemin WHERE 1=1'
     params = {}
     
@@ -43,17 +76,14 @@ def get_filtered_data(_engine, field: str, il: str = None, ilce: str = None,
         
     query += f' ORDER BY "{field}"'
     
-    try:
-        with _engine.connect() as conn:
+    with _engine.connect() as conn:
+        with conn.begin():  # Explicit transaction management
             result = conn.execute(text(query), params)
             return [row[0] for row in result if row[0]]
-    except Exception as e:
-        logger.error(f"Database error: {str(e)}")
-        st.error("Veritabanına erişimde bir hata oluştu. Lütfen tekrar deneyin.")
-        return []
 
+@retry_on_db_error()
 def search_records(_engine, il: str, ilce: str, mahalle: str, ada: str, parsel: str) -> pd.DataFrame:
-    """Search records with SQLAlchemy."""
+    """Search records with retry logic."""
     query = """
         SELECT 
             z."ParselRef",
@@ -93,17 +123,13 @@ def search_records(_engine, il: str, ilce: str, mahalle: str, ada: str, parsel: 
         ORDER BY zh."Adi", zh."Soyadi"
     """
     
-    try:
-        with _engine.connect() as conn:
+    with _engine.connect() as conn:
+        with conn.begin():  # Explicit transaction management
             result = conn.execute(
                 text(query),
                 {"il": il, "ilce": ilce, "mahalle": mahalle, "ada": ada, "parsel": parsel}
             )
             return pd.DataFrame(result.fetchall(), columns=result.keys())
-    except Exception as e:
-        logger.error(f"Database error: {str(e)}")
-        st.error("Veritabanına erişimde bir hata oluştu. Lütfen tekrar deneyin.")
-        return pd.DataFrame()
 
 def create_pie_chart(df: pd.DataFrame) -> go.Figure:
    try:
