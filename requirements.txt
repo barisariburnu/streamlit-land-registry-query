@@ -5,4 +5,4 @@ SQLAlchemy==2.0.36
 streamlit==1.40.1
 plotly==5.18.0
 psycopg2-binary==2.9.9
-xlsxwriter==3.1.9  # Excel export için
+xlsxwriter==3.1.9

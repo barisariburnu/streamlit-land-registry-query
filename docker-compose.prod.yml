@@ -1,0 +1,7 @@
+services:
+  streamlit-land-registry-query:
+    build: .
+    container_name: streamlit-land-registry-query
+    restart: always
+    ports:
+      - "8502:8502"

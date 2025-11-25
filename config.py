@@ -1,0 +1,86 @@
+# Language Configuration
+# Supported languages: en, tr
+APP_LANGUAGE = "tr"
+
+# UI Labels - Turkish
+LABELS_TR = {
+    "page_title": "Zemin Arama",
+    "page_icon": "🔍",
+    "title": "Zemin Arama",
+    "province": "İl",
+    "district": "İlçe",
+    "neighborhood": "Mahalle/Köy",
+    "block": "Ada",
+    "parcel": "Parsel",
+    "search": "Ara",
+    "results_title": "Arama Sonuçları",
+    "visualizations_title": "Görselleştirmeler",
+    "pie_chart_title": "Hisse Dağılımı (m²)",
+    "bar_chart_title": "Hisse Dağılımı (m²)",
+    "waterfall_chart_title": "Kümülatif Alan Dağılımı",
+    "shareholder": "Hissedar",
+    "area": "Alan (m²)",
+    "summary_stats_title": "Özet İstatistikler",
+    "total_shareholders": "Toplam Hissedar",
+    "avg_share": "Ortalama Hisse (m²)",
+    "max_share": "En Yüksek Hisse (m²)",
+    "min_share": "En Düşük Hisse (m²)",
+    "export_title": "Dışa Aktarma",
+    "download_csv": "CSV olarak indir",
+    "download_excel": "Excel olarak indir",
+    "no_results": "Sonuç bulunamadı.",
+    "fill_all_fields": "Lütfen tüm alanları doldurun.",
+    "csv_export_error": "CSV dosyası oluşturulurken hata oluştu.",
+    "excel_export_error": "Excel dosyası oluşturulurken hata oluştu.",
+    "unexpected_error": "Beklenmeyen bir hata oluştu. Lütfen sistem yöneticinize başvurun.",
+    "pie_chart_error": "Pasta grafik oluşturulamadı.",
+    "bar_chart_error": "Bar grafik oluşturulamadı.",
+    "waterfall_chart_error": "Kümülatif grafik oluşturulamadı.",
+    "tab_pie": "Pasta Grafik",
+    "tab_bar": "Bar Grafik",
+    "tab_waterfall": "Kümülatif Dağılım",
+    "excel_sheet_name": "Sonuçlar"
+}
+
+# UI Labels - English
+LABELS_EN = {
+    "page_title": "Land Registry Search",
+    "page_icon": "🔍",
+    "title": "Land Registry Search",
+    "province": "Province",
+    "district": "District",
+    "neighborhood": "Neighborhood",
+    "block": "Block",
+    "parcel": "Parcel",
+    "search": "Search",
+    "results_title": "Search Results",
+    "visualizations_title": "Visualizations",
+    "pie_chart_title": "Share Distribution (m²)",
+    "bar_chart_title": "Share Distribution (m²)",
+    "waterfall_chart_title": "Cumulative Area Distribution",
+    "shareholder": "Shareholder",
+    "area": "Area (m²)",
+    "summary_stats_title": "Summary Statistics",
+    "total_shareholders": "Total Shareholders",
+    "avg_share": "Average Share (m²)",
+    "max_share": "Highest Share (m²)",
+    "min_share": "Lowest Share (m²)",
+    "export_title": "Export",
+    "download_csv": "Download as CSV",
+    "download_excel": "Download as Excel",
+    "no_results": "No results found.",
+    "fill_all_fields": "Please fill in all fields.",
+    "csv_export_error": "An error occurred while generating CSV file.",
+    "excel_export_error": "An error occurred while generating Excel file.",
+    "unexpected_error": "An unexpected error occurred. Please contact your system administrator.",
+    "pie_chart_error": "Could not generate pie chart.",
+    "bar_chart_error": "Could not generate bar chart.",
+    "waterfall_chart_error": "Could not generate cumulative chart.",
+    "tab_pie": "Pie Chart",
+    "tab_bar": "Bar Chart",
+    "tab_waterfall": "Cumulative Distribution",
+    "excel_sheet_name": "Results"
+}
+
+# Select labels based on language
+LABELS = LABELS_TR if APP_LANGUAGE == "tr" else LABELS_EN

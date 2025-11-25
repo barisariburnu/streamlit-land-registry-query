@@ -9,6 +9,7 @@ from sqlalchemy.exc import OperationalError, DatabaseError
 from typing import List, Dict, Any
 import io
 import logging
+from config import LABELS
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -143,7 +144,7 @@ def create_pie_chart(df: pd.DataFrame) -> go.Figure:
        fig = px.pie(
            values=df['HisseyeDusenAlan'],
            names=names,
-           title='Hisse Dağılımı (m²)'
+           title=LABELS['pie_chart_title']
        )
        fig.update_traces(
            textposition='inside', 
@@ -167,8 +168,8 @@ def create_bar_chart(df: pd.DataFrame) -> go.Figure:
        fig = px.bar(
            x=names,
            y=df['HisseyeDusenAlan'],
-           title='Hisse Dağılımı (m²)',
-           labels={'x': 'Hissedar', 'y': 'Alan (m²)'}
+           title=LABELS['bar_chart_title'],
+           labels={'x': LABELS['shareholder'], 'y': LABELS['area']}
        )
        fig.update_traces(texttemplate='%{y:.2f}m²', textposition='outside')
        return fig
@@ -200,9 +201,9 @@ def create_waterfall_chart(df: pd.DataFrame) -> go.Figure:
        ))
        
        fig.update_layout(
-           title='Kümülatif Alan Dağılımı',
-           xaxis_title="Hissedar",
-           yaxis_title="Alan (m²)",
+           title=LABELS['waterfall_chart_title'],
+           xaxis_title=LABELS['shareholder'],
+           yaxis_title=LABELS['area'],
            showlegend=False
        )
        return fig
@@ -215,9 +216,9 @@ def export_to_excel(df: pd.DataFrame) -> bytes:
     buffer = io.BytesIO()
     
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df.to_excel(writer, sheet_name='Sonuçlar', index=False)
+        df.to_excel(writer, sheet_name=LABELS['excel_sheet_name'], index=False)
         workbook = writer.book
-        worksheet = writer.sheets['Sonuçlar']
+        worksheet = writer.sheets[LABELS['excel_sheet_name']]
         
         header_format = workbook.add_format({
             'bold': True,
@@ -239,8 +240,8 @@ def main():
     try:
         # Page config
         st.set_page_config(
-            page_title="Zemin Arama",
-            page_icon="🔍",
+            page_title=LABELS['page_title'],
+            page_icon=LABELS['page_icon'],
             layout="wide",
             initial_sidebar_state="collapsed"
         )
@@ -255,7 +256,7 @@ def main():
         st.markdown(hide_menu_style, unsafe_allow_html=True)
         
         # Title
-        st.title("Zemin Arama")
+        st.title(LABELS['title'])
         
         # Get database engine
         engine = get_db_engine()
@@ -265,117 +266,117 @@ def main():
         
         with col1:
             iller = get_filtered_data(engine, "Il")
-            il = st.selectbox("İl", [""] + iller)
+            il = st.selectbox(LABELS['province'], [""] + iller)
         
         with col2:
             ilceler = get_filtered_data(engine, "Ilce", il=il) if il else []
-            ilce = st.selectbox("İlçe", [""] + ilceler)
+            ilce = st.selectbox(LABELS['district'], [""] + ilceler)
         
         with col3:
             mahalleler = get_filtered_data(engine, "MahalleKoyAdi", il=il, ilce=ilce) if ilce else []
-            mahalle = st.selectbox("Mahalle/Köy", [""] + mahalleler)
+            mahalle = st.selectbox(LABELS['neighborhood'], [""] + mahalleler)
         
         col4, col5 = st.columns(2)
         
         with col4:
             adalar = get_filtered_data(engine, "Ada", il=il, ilce=ilce, mahalle=mahalle) if mahalle else []
-            ada = st.selectbox("Ada", [""] + adalar)
+            ada = st.selectbox(LABELS['block'], [""] + adalar)
         
         with col5:
             parseller = get_filtered_data(engine, "Parsel", il=il, ilce=ilce, mahalle=mahalle, ada=ada) if ada else []
-            parsel = st.selectbox("Parsel", [""] + parseller)
+            parsel = st.selectbox(LABELS['parcel'], [""] + parseller)
         
         # Search button
-        search_clicked = st.button("Ara")
+        search_clicked = st.button(LABELS['search'])
         
         if search_clicked and all([il, ilce, mahalle, ada, parsel]):
             df = search_records(engine, il, ilce, mahalle, ada, parsel)
             
             if not df.empty:
                 # Display results in a table
-                st.subheader("Arama Sonuçları")
+                st.subheader(LABELS['results_title'])
                 st.dataframe(df, use_container_width=True)
                 
                 # Create visualization section
-                st.subheader("Görselleştirmeler")
+                st.subheader(LABELS['visualizations_title'])
                 
                 # Create tabs for different visualizations
-                tab1, tab2, tab3 = st.tabs(["Pasta Grafik", "Bar Grafik", "Kümülatif Dağılım"])
+                tab1, tab2, tab3 = st.tabs([LABELS['tab_pie'], LABELS['tab_bar'], LABELS['tab_waterfall']])
                 
                 with tab1:
                     pie_chart = create_pie_chart(df)
                     if pie_chart:
                         st.plotly_chart(pie_chart, use_container_width=True)
                     else:
-                        st.warning("Pasta grafik oluşturulamadı.")
+                        st.warning(LABELS['pie_chart_error'])
                 
                 with tab2:
                     bar_chart = create_bar_chart(df)
                     if bar_chart:
                         st.plotly_chart(bar_chart, use_container_width=True)
                     else:
-                        st.warning("Bar grafik oluşturulamadı.")
+                        st.warning(LABELS['bar_chart_error'])
                 
                 with tab3:
                     waterfall_chart = create_waterfall_chart(df)
                     if waterfall_chart:
                         st.plotly_chart(waterfall_chart, use_container_width=True)
                     else:
-                        st.warning("Kümülatif grafik oluşturulamadı.")
+                        st.warning(LABELS['waterfall_chart_error'])
                 
                 # Summary statistics
-                st.subheader("Özet İstatistikler")
+                st.subheader(LABELS['summary_stats_title'])
                 col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
-                    st.metric("Toplam Hissedar", len(df))
+                    st.metric(LABELS['total_shareholders'], len(df))
                 
                 with col2:
-                    st.metric("Ortalama Hisse (m²)", f"{df['HisseyeDusenAlan'].mean():.2f}")
+                    st.metric(LABELS['avg_share'], f"{df['HisseyeDusenAlan'].mean():.2f}")
                 
                 with col3:
-                    st.metric("En Yüksek Hisse (m²)", f"{df['HisseyeDusenAlan'].max():.2f}")
+                    st.metric(LABELS['max_share'], f"{df['HisseyeDusenAlan'].max():.2f}")
                 
                 with col4:
-                    st.metric("En Düşük Hisse (m²)", f"{df['HisseyeDusenAlan'].min():.2f}")
+                    st.metric(LABELS['min_share'], f"{df['HisseyeDusenAlan'].min():.2f}")
                 
                 # Add export buttons
-                st.subheader("Dışa Aktarma")
+                st.subheader(LABELS['export_title'])
                 col1, col2 = st.columns(2)
                 
                 with col1:
                     try:
                         csv = df.to_csv(index=False, encoding='utf-8-sig').encode('utf-8-sig')
                         st.download_button(
-                            label="CSV olarak indir",
+                            label=LABELS['download_csv'],
                             data=csv,
                             file_name=f"sonuclar_{il}_{ilce}_{mahalle}_{ada}_{parsel}.csv",
                             mime="text/csv"
                         )
                     except Exception as e:
                         logger.error(f"CSV export error: {str(e)}")
-                        st.error("CSV dosyası oluşturulurken hata oluştu.")
+                        st.error(LABELS['csv_export_error'])
                 
                 with col2:
                     try:
                         excel_data = export_to_excel(df)
                         st.download_button(
-                            label="Excel olarak indir",
+                            label=LABELS['download_excel'],
                             data=excel_data,
                             file_name=f"sonuclar_{il}_{ilce}_{mahalle}_{ada}_{parsel}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
                     except Exception as e:
                         logger.error(f"Excel export error: {str(e)}")
-                        st.error("Excel dosyası oluşturulurken hata oluştu.")
+                        st.error(LABELS['excel_export_error'])
             else:
-                st.warning("Sonuç bulunamadı.")
+                st.warning(LABELS['no_results'])
         elif search_clicked:
-            st.warning("Lütfen tüm alanları doldurun.")
+            st.warning(LABELS['fill_all_fields'])
 
     except Exception as e:
         logger.error(f"Application error: {str(e)}")
-        st.error("Beklenmeyen bir hata oluştu. Lütfen sistem yöneticinize başvurun.")
+        st.error(LABELS['unexpected_error'])
 
 if __name__ == "__main__":
     main()

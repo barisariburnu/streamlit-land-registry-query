@@ -1,8 +1,8 @@
 FROM python:3.10-slim
 
-WORKDIR usr/src/app
+WORKDIR /usr/src/app
 
-# ODBC sürücüleri ve bağımlılıkları kur
+# Install ODBC drivers and dependencies
 RUN apt-get update && apt-get install -y \
     unixodbc \
     unixodbc-dev \
