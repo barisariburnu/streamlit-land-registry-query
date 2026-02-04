@@ -41,4 +41,4 @@ EXPOSE 8502
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl --fail http://localhost:8502/_stcore/health || exit 1
 
-CMD ["./startup.sh"]
+CMD ["/bin/bash", "./startup.sh"]
