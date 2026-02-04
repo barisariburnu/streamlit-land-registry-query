@@ -13,6 +13,7 @@ gatherUsageStats = false
 enableCORS = false
 enableXsrfProtection = true
 port = 8502
+address = "0.0.0.0"
 
 [ui]
 hideTopBar = true  # Hides the deploy menu and other options
