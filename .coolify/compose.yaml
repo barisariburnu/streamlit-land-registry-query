@@ -1,0 +1,60 @@
+# Coolify: Base Directory /, Compose Location /.coolify/compose.yaml, RAW mode.
+services:
+  streamlit-land-registry-query:
+    command: null
+    entrypoint: null
+    environment:
+      TZ: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_TZ}
+      POSTGRES_HOST: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_POSTGRES_HOST}
+      POSTGRES_PORT: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_POSTGRES_PORT}
+      POSTGRES_NAME: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_POSTGRES_NAME}
+      POSTGRES_USER: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_POSTGRES_PASSWORD}
+      PATH: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_PATH}
+      LANG: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_LANG}
+      GPG_KEY: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_GPG_KEY}
+      PYTHON_VERSION: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_PYTHON_VERSION}
+      PYTHON_SHA256: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_PYTHON_SHA256}
+      PYTHONDONTWRITEBYTECODE: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_PYTHONDONTWRITEBYTECODE}
+      PYTHONUNBUFFERED: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_PYTHONUNBUFFERED}
+      PIP_NO_CACHE_DIR: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_PIP_NO_CACHE_DIR}
+      PIP_DISABLE_PIP_VERSION_CHECK: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_PIP_DISABLE_PIP_VERSION_CHECK}
+    ports:
+    - 8502:8502/tcp
+    restart: always
+    image: coolify-local/streamlit-land-registry-query:${SOURCE_COMMIT:-latest}
+    pull_policy: never
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; assert urllib.request.urlopen('http://127.0.0.1:8502/_stcore/health',timeout=5).status == 200
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    container_name: streamlit-land-registry-query-${COOLIFY_RESOURCE_UUID:?}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    labels:
+    - traefik.docker.network=${COOLIFY_RESOURCE_UUID}
+    - traefik.enable=true
+    - traefik.http.middlewares.gzip-sse.compress.excludedcontenttypes=text/event-stream
+    - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+    - traefik.http.routers.http-0-${COOLIFY_RESOURCE_UUID}-streamlit-land-registry-query-58a9.entryPoints=http
+    - traefik.http.routers.http-0-${COOLIFY_RESOURCE_UUID}-streamlit-land-registry-query-58a9.middlewares=gzip-sse
+    - traefik.http.routers.http-0-${COOLIFY_RESOURCE_UUID}-streamlit-land-registry-query-58a9.rule=Host(`${COOLIFY_PUBLIC_HOST:?}`) && PathPrefix(`/`)
+    - traefik.http.routers.http-0-${COOLIFY_RESOURCE_UUID}-streamlit-land-registry-query-58a9.service=http-0-${COOLIFY_RESOURCE_UUID}-streamlit-land-registry-query-58a9
+    - traefik.http.services.http-0-${COOLIFY_RESOURCE_UUID}-streamlit-land-registry-query-58a9.loadbalancer.server.port=8502
+name: ${COOLIFY_RESOURCE_UUID:?}
+networks:
+  default:
+    external: true
+    name: ${COOLIFY_RESOURCE_UUID:?}
