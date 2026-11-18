@@ -1,3 +1,4 @@
+from monitoring import report, run_guarded
 from functools import wraps
 import time
 import streamlit as st
@@ -153,6 +154,7 @@ def create_pie_chart(df: pd.DataFrame) -> go.Figure:
        )
        return fig
    except Exception as e:
+       report(e, 'chart_failed')
        logger.error(f"Pie chart error: {str(e)}")
        return None
 
@@ -174,6 +176,7 @@ def create_bar_chart(df: pd.DataFrame) -> go.Figure:
        fig.update_traces(texttemplate='%{y:.2f}m²', textposition='outside')
        return fig
    except Exception as e:
+       report(e, 'chart_failed')
        logger.error(f"Bar chart error: {str(e)}")
        return None
 
@@ -208,6 +211,7 @@ def create_waterfall_chart(df: pd.DataFrame) -> go.Figure:
        )
        return fig
    except Exception as e:
+       report(e, 'chart_failed')
        logger.error(f"Waterfall chart error: {str(e)}")
        return None
 
@@ -354,6 +358,7 @@ def main():
                             mime="text/csv"
                         )
                     except Exception as e:
+                        report(e, 'export_failed')
                         logger.error(f"CSV export error: {str(e)}")
                         st.error(LABELS['csv_export_error'])
                 
@@ -367,6 +372,7 @@ def main():
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
                     except Exception as e:
+                        report(e, 'export_failed')
                         logger.error(f"Excel export error: {str(e)}")
                         st.error(LABELS['excel_export_error'])
             else:
@@ -375,8 +381,9 @@ def main():
             st.warning(LABELS['fill_all_fields'])
 
     except Exception as e:
+        report(e, 'operation_failed')
         logger.error(f"Application error: {str(e)}")
         st.error(LABELS['unexpected_error'])
 
 if __name__ == "__main__":
-    main()
+    run_guarded(main)

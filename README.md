@@ -342,3 +342,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 ---
 
 **Note:** This is a data querying and visualization tool. Ensure you have proper authorization to access and display land registry information in compliance with your local regulations and privacy laws.
+## GlitchTip hata izleme
+
+Gizlilik sınırı, runtime değişkenleri ve sentetik kontrol komutu için
+[operasyon notlarını](.coolify/README.md#glitchtip) inceleyin.

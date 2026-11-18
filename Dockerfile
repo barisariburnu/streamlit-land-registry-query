@@ -27,7 +27,7 @@ RUN mkdir -p /usr/src/app/uploads /usr/src/app/.streamlit
 
 # Copy application code
 # Using specific COPY commands for better cache utilization
-COPY app.py config.py ./
+COPY app.py config.py monitoring.py ./
 COPY .streamlit/config.toml .streamlit/
 COPY startup.sh .
 
@@ -42,3 +42,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl --fail http://localhost:8502/_stcore/health || exit 1
 
 CMD ["/bin/bash", "./startup.sh"]
+
+# Immutable source metadata follows all expensive build layers.
+ARG MONITORING_SOURCE_REVISION
+ENV SENTRY_RELEASE=streamlit-land-registry-query@${MONITORING_SOURCE_REVISION}
+LABEL org.opencontainers.image.revision="${MONITORING_SOURCE_REVISION}"

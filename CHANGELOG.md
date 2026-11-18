@@ -48,3 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/barisariburnu/streamlit-land-registry-query/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/barisariburnu/streamlit-land-registry-query/releases/tag/v1.0.0
+
+## Unreleased
+
+- Yakalanan uygulama, grafik ve export hataları için isteğe bağlı, kapalı olay zarfıyla GlitchTip izlemesi eklendi.
+- Release ve OCI revision tam kaynak commit kimliğine bağlandı.

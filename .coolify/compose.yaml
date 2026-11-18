@@ -4,6 +4,8 @@ services:
     command: null
     entrypoint: null
     environment:
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       TZ: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_TZ}
       POSTGRES_HOST: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_POSTGRES_HOST}
       POSTGRES_PORT: ${ESTATE_STREAMLIT_LAND_REGISTRY_QUERY_POSTGRES_PORT}
@@ -22,7 +24,7 @@ services:
     ports:
     - 8502:8502/tcp
     restart: always
-    image: coolify-local/streamlit-land-registry-query:${SOURCE_COMMIT:-latest}
+    image: coolify-local/streamlit-land-registry-query:latest
     pull_policy: never
     healthcheck:
       test:
